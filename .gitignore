@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+ai/venv/
+# Third-party model (talking-head-anime-3) and its weights: fetch separately
+ai/tha3/
+# Cubism backups
+*.cmo3.bak
+*_backup*

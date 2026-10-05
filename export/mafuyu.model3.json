@@ -1,0 +1,10 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "mafuyu.moc3",
+		"Textures": [
+			"mafuyu.2048/texture_00.png"
+		],
+		"DisplayInfo": "mafuyu.cdi3.json"
+	}
+}

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mafuyu Live2D</title>
+<style>
+  :root {
+    --bg1: #eef2f8; --bg2: #d9e1ee; --ink: #2b3142; --muted: #6b7388;
+    --panel: rgba(255, 255, 255, .82); --line: rgba(40, 50, 80, .12); --accent: #4f7fd8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg1: #20253a; --bg2: #121522; --ink: #e6e9f2; --muted: #9aa3ba;
+      --panel: rgba(28, 32, 48, .85); --line: rgba(255, 255, 255, .12); --accent: #86a8ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    color: var(--ink);
+    background: radial-gradient(ellipse at 50% 30%, var(--bg1), var(--bg2));
+  }
+  body[data-bg="green"] { background: #00ff00; }
+  body[data-bg="white"] { background: #fff; }
+  body[data-bg="room"] { background: linear-gradient(180deg, #f4f6f9 0 62%, #c9ced8 62% 100%); }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  #stage:active { cursor: grabbing; }
+  .bar {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 6px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    backdrop-filter: blur(10px); max-width: calc(100vw - 32px);
+  }
+  button, select {
+    font: inherit; font-size: 13px; color: var(--ink); background: transparent;
+    border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #panel {
+    position: fixed; top: 16px; right: 16px; width: 270px; max-height: calc(100vh - 110px); overflow: auto;
+    padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    backdrop-filter: blur(10px); display: none; font-size: 12px;
+  }
+  body.panel-open #panel { display: block; }
+  #panel h2 { font-size: 13px; margin: 0 0 8px; }
+  .row { display: grid; grid-template-columns: 70px 1fr 36px; align-items: center; gap: 6px; margin: 4px 0; }
+  .row input { width: 100%; accent-color: var(--accent); }
+  .row output { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
+  #status { position: fixed; top: 16px; left: 16px; font-size: 13px; color: var(--muted); }
+  #cam { position: fixed; left: 16px; bottom: 16px; width: 160px; border-radius: 10px; transform: scaleX(-1);
+         display: none; border: 1px solid var(--line); }
+  body.cam-on #cam { display: block; }
+  .heart {
+    position: fixed; width: 44px; height: 40px; pointer-events: none; margin: -20px 0 0 -22px;
+    transform: scale(var(--s)); opacity: 0; animation: heart 1.9s ease-out forwards;
+  }
+  .heart::before {
+    content: ""; position: absolute; inset: 0; background: #f7a3bd;
+    clip-path: path("M22 39 C8 28 0 20 0 11 C0 4 5 0 11 0 C16 0 20 3 22 7 C24 3 28 0 33 0 C39 0 44 4 44 11 C44 20 36 28 22 39 Z");
+  }
+  @keyframes heart {
+    0% { opacity: 0; transform: translateY(10px) scale(calc(var(--s) * .4)); }
+    15% { opacity: 1; transform: translateY(0) scale(var(--s)); }
+    100% { opacity: 0; transform: translateY(-90px) scale(var(--s)); }
+  }
+  @media (max-width: 600px) { #panel { left: 16px; width: auto; } }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="status">読み込み中…</div>
+<video id="cam" playsinline muted></video>
+
+<div class="bar">
+  <button id="btn-frame" data-mode="full">バストアップ</button>
+  <button id="btn-happy">にっこり</button>
+  <button id="btn-wink">ウインク</button>
+  <button id="btn-talk">おしゃべり</button>
+  <button id="btn-mic">マイク口パク</button>
+  <button id="btn-cam">カメラ追従</button>
+  <select id="bg" aria-label="背景">
+    <option value="">背景: グラデ</option>
+    <option value="white">背景: 白</option>
+    <option value="room">背景: 部屋</option>
+    <option value="green">背景: グリーンバック</option>
+  </select>
+  <button id="btn-panel">パラメータ</button>
+</div>
+
+<div id="panel">
+  <h2>パラメータ</h2>
+  <label class="row" style="grid-template-columns: auto 1fr"><input type="checkbox" id="manual"> <span>手動で動かす（自動モーション停止）</span></label>
+  <div id="params"></div>
+  <p class="hint">マウスで視線追従 / 顔クリックでにっこり / ホイールでズーム / ドラッグで移動</p>
+  <p class="hint">顔の向きの動きは <a href="http://pkhungurn.github.io/talking-head-anime-3/" target="_blank" rel="noopener">Talking Head(?) Anime from a Single Image 3</a>（Pramook Khungurn, CC BY 4.0）のモデルで生成しています。</p>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

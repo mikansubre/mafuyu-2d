@@ -1,0 +1,190 @@
+{
+ "size": [
+  2000,
+  4156
+ ],
+ "layers": {
+  "eyeL_white": {
+   "file": "eyeL_white.png",
+   "x": 808,
+   "y": 630,
+   "w": 172,
+   "h": 165,
+   "pivotY": 771,
+   "iris": [
+    916,
+    731
+   ]
+  },
+  "eyeL_iris": {
+   "file": "eyeL_iris.png",
+   "x": 808,
+   "y": 630,
+   "w": 172,
+   "h": 165
+  },
+  "eyeL_line": {
+   "file": "eyeL_line.png",
+   "x": 808,
+   "y": 630,
+   "w": 172,
+   "h": 165
+  },
+  "eyeL_mask": {
+   "file": "eyeL_mask.png",
+   "x": 808,
+   "y": 630,
+   "w": 172,
+   "h": 165
+  },
+  "eyeL_closed": {
+   "file": "eyeL_closed.png",
+   "x": 808,
+   "y": 630,
+   "w": 172,
+   "h": 165
+  },
+  "eyeR_white": {
+   "file": "eyeR_white.png",
+   "x": 1075,
+   "y": 633,
+   "w": 165,
+   "h": 159,
+   "pivotY": 770,
+   "iris": [
+    1133,
+    731
+   ]
+  },
+  "eyeR_iris": {
+   "file": "eyeR_iris.png",
+   "x": 1075,
+   "y": 633,
+   "w": 165,
+   "h": 159
+  },
+  "eyeR_line": {
+   "file": "eyeR_line.png",
+   "x": 1075,
+   "y": 633,
+   "w": 165,
+   "h": 159
+  },
+  "eyeR_mask": {
+   "file": "eyeR_mask.png",
+   "x": 1075,
+   "y": 633,
+   "w": 165,
+   "h": 159
+  },
+  "eyeR_closed": {
+   "file": "eyeR_closed.png",
+   "x": 1075,
+   "y": 633,
+   "w": 165,
+   "h": 159
+  },
+  "mouth_smile": {
+   "file": "mouth_smile.png",
+   "x": 970,
+   "y": 860,
+   "w": 100,
+   "h": 32
+  },
+  "eyeL_happy": {
+   "file": "eyeL_happy.png",
+   "x": 844,
+   "y": 721,
+   "w": 128,
+   "h": 58
+  },
+  "eyeR_happy": {
+   "file": "eyeR_happy.png",
+   "x": 1068,
+   "y": 726,
+   "w": 130,
+   "h": 53
+  },
+  "mouth_open": {
+   "file": "mouth_open.png",
+   "x": 973,
+   "y": 853,
+   "w": 91,
+   "h": 60
+  },
+  "back": {
+   "file": "back.png",
+   "x": 414,
+   "y": 969,
+   "w": 1202,
+   "h": 696,
+   "mesh": "back"
+  },
+  "legs": {
+   "file": "legs.png",
+   "x": 677,
+   "y": 2196,
+   "w": 709,
+   "h": 1911,
+   "mesh": "legs"
+  },
+  "body": {
+   "file": "body.png",
+   "x": 321,
+   "y": 756,
+   "w": 1395,
+   "h": 1772,
+   "mesh": "body"
+  },
+  "head": {
+   "file": "head.png",
+   "x": 489,
+   "y": 151,
+   "w": 1054,
+   "h": 950,
+   "mesh": "head"
+  }
+ },
+ "flow": {
+  "file": "flow.bin",
+  "x0": 280,
+  "y0": 80,
+  "step": 16,
+  "nx": 93,
+  "ny": 103,
+  "yaws": [
+   -1,
+   -0.6666666666666666,
+   -0.3333333333333333,
+   0,
+   0.3333333333333333,
+   0.6666666666666666,
+   1
+  ],
+  "pitches": [
+   -1,
+   -0.5,
+   0,
+   0.5,
+   1
+  ],
+  "unit": 0.1,
+  "credit": "Talking Head(?) Anime from a Single Image 3 by Pramook Khungurn (CC BY 4.0)"
+ },
+ "weights": {
+  "file": "weights.png",
+  "scale": 4,
+  "w": 500,
+  "h": 1039
+ },
+ "bbox": [
+  344,
+  172,
+  1696,
+  4084
+ ],
+ "cut": {
+  "y": 1000,
+  "chin": 952
+ }
+}
