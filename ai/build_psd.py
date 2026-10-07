@@ -169,10 +169,71 @@ HAND = {'L': [(380, 2220), (578, 2220), (535, 2317), (497, 2440), (380, 2440)],
         'R': [(1495, 2250), (1660, 2250), (1660, 2440), (1575, 2440), (1555, 2383), (1505, 2280)]}
 hem_y = 1690 + 0.00045 * (xx - 1020) ** 2          # bottom edge of the shirt (curved)
 HEM_Y = 1740
+
+
+def manual_cloth():
+    """Hand-made cut (manual/README.md): the clothes' outline (silhouette.png, PhotoCraft Quick Selection) and
+    the sleeve seams drawn by hand (seams.psd). Returns (pixels on the full canvas, left arm, right arm) or None."""
+    sil_path, seam_path = os.path.join(ROOT, 'manual', 'silhouette.png'), os.path.join(ROOT, 'manual', 'seams.psd')
+    if not (os.path.exists(sil_path) and os.path.exists(seam_path)):
+        return None
+    sil_a = np.array(Image.open(sil_path).convert('L')).astype(np.float32) / 255
+    # strands of the side locks that the selection took in around the neck stay with the head
+    sil_a[head[..., 3] > 128] = 0
+    S = sil_a > 0.5
+    seam = np.zeros((H, W), bool)
+    for l in PSDImage.open(seam_path):
+        if 'seam' in (l._record.name or '') and l.kind == 'pixel' and l.width > 0:
+            a = np.array(l.topil().convert('RGBA'))[..., 3] > 0
+            seam[l.top:l.top + a.shape[0], l.left:l.left + a.shape[1]] |= a
+    # carry each stroke's ends on to the outline so the strokes really close the sleeves off
+    ext = seam.astype(np.uint8)
+    lab, n = ndimage.label(dil(seam, 9))
+    for i in range(1, n + 1):
+        ys, xs = np.nonzero((lab == i) & seam)
+        if len(ys) < 200:
+            continue
+        o = np.argsort(ys)
+        for end, back in ((o[:30], o[60:120]), (o[-30:], o[-120:-60])):
+            p = np.array([xs[end].mean(), ys[end].mean()])
+            d = p - np.array([xs[back].mean(), ys[back].mean()])
+            d /= np.linalg.norm(d)
+            e = p.copy()
+            for _ in range(400):
+                e += d
+                if not (0 <= e[0] < W and 0 <= e[1] < H) or not S[int(e[1]), int(e[0])]:
+                    break
+            cv2.line(ext, (int(p[0]), int(p[1])), (int(e[0]), int(e[1])), 1, 6)
+    parts = S & ~dil(ext > 0, 5)
+    lab, n = ndimage.label(parts)
+    sizes = ndimage.sum(parts, lab, range(1, n + 1))
+    side = {}
+    for i in np.argsort(sizes)[::-1][:3] + 1:
+        cx = xx[lab == i].mean()
+        side['L' if cx < 850 else 'R' if cx > 1190 else 'C'] = lab == i
+    src = body.copy()
+    orig = np.array(Image.open(os.path.join(ROOT, '4_4.png')).convert('RGBA')).astype(np.float32)
+    src[S] = orig[S]
+    src[..., 3][S] = orig[..., 3][S] * sil_a[S]
+    # above the hem only the clean outline counts (the old cut left ragged bits around it)
+    src[..., 3][~S & (yy < hem_y)] = 0
+    # the sleeves get the seam line itself (they are drawn over the torso)
+    return src, dil(side['L'], 9) & S, dil(side['R'], 9) & S
+
+
+manual = manual_cloth()
+if manual is not None:
+    print('using the hand-made cut in manual/')
+    body, man_L, man_R = manual
+    ba = body[..., 3] > 20
+    blum = body[..., :3].mean(-1)
 rest = ba & ~neck_m
 arms = {}
 for k in 'LR':
-    arms[k] = rest & (poly(ARM[k]) | poly(HAND[k]))
+    if manual is not None:
+        arms[k] = rest & ((man_L if k == 'L' else man_R) | poly(HAND[k]))
+    else:
+        arms[k] = rest & (poly(ARM[k]) | poly(HAND[k]))
 arm_any = arms['L'] | arms['R']
 skirt_m = rest & ~arm_any & (yy >= hem_y)
 # only the main skirt body; stray bits (cuff / finger tips outside the traced arm outline) go to that arm
@@ -213,10 +274,71 @@ for side in 'LR':
 layers['mouth_close'] = full_layer('mouth_smile')
 layers['mouth_open'] = full_layer('mouth_open')
 
+# ================================================================ hair over the shoulders
+# In the art the tails lie over the shoulders / outer sleeve edges, but the clothes were cut out around them, so
+# the tails (behind the body, moving with the head) showed through notches in the shirt and slid against it.
+# The hair over the cloth becomes its own layer in front of the arms (rigged with the tails) and the cloth
+# underneath is repainted, so the shirt is a whole shape.
+CLOTH = ('torso', 'arm_L', 'arm_R')
+body_m = np.zeros((H, W), bool)
+for k in CLOTH + ('neck',):
+    body_m |= layers[k][..., 3] > 128
+tail_vis = ((layers['tail_L'][..., 3] > 20) | (layers['tail_R'][..., 3] > 20)) & ~body_m
+pad = 200
+closed = cv2.morphologyEx(np.pad(body_m.astype(np.uint8), pad), cv2.MORPH_CLOSE,
+                          cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (101, 101)))[pad:-pad, pad:-pad] > 0
+shoulder_band = (yy > 1000) & (yy < 1700)
+hull = np.zeros((H, W), np.uint8)   # outline of each side of the shirt with the hair-shaped dents smoothed out
+for side in (xx < 1020, xx >= 1020):
+    cs, _ = cv2.findContours((body_m & shoulder_band & side).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    cv2.fillPoly(hull, [cv2.convexHull(np.vstack(cs))], 1)
+cloth_m = np.zeros((H, W), bool)
+for k in CLOTH:
+    cloth_m |= layers[k][..., 3] > 128
+cloth_top = ndimage.median_filter(np.where(cloth_m.any(0), cloth_m.argmax(0), H), 31)   # shoulder line
+over = (closed | ((hull > 0) & shoulder_band)) & tail_vis & (yy < 1700) & (yy >= cloth_top[None, :])
+over_soft = dil(over, 5) & ~body_m   # never the repainted hair hidden under the shirt
+for k in ('L', 'R'):
+    layers[f'tail_front_{k}'] = masked(layers[f'tail_{k}'], over_soft)
+# repaint the cloth under that hair, each pixel going to the nearest cloth layer
+lama_in = np.zeros((H, W, 4), np.float32)
+for k in CLOTH:
+    a = layers[k][..., 3:] / 255
+    lama_in[..., :3] = layers[k][..., :3] * a + lama_in[..., :3] * (1 - a)
+    lama_in[..., 3] = np.maximum(lama_in[..., 3], layers[k][..., 3])
+fill_region = dil(over, 7) & ~body_m
+cloth_rgb = lama_fill(lama_in, fill_region, (45, 48, 70), pad=60)
+dist = np.stack([ndimage.distance_transform_edt(~(layers[k][..., 3] > 128)) for k in CLOTH])
+owner = np.argmin(dist, 0)
+for i, k in enumerate(CLOTH):
+    m = fill_region & (owner == i)
+    layers[k][..., :3][m] = cloth_rgb[m]
+    layers[k][..., 3][m] = 255
+
+# ================================================================ cleanup (things that show once the model moves)
+# tails: the head-side tails slide against the body when the head tilts; what they hide under the torso / arms
+# (repainted flat white, the ribbon's tail cut off) then pokes out above the shoulders. Keep only a 30px band
+# along the visible hair so a sway doesn't reveal a hard cut.
+cover = np.zeros((H, W), bool)
+for k in ('torso', 'arm_L', 'arm_R', 'neck'):
+    cover |= layers[k][..., 3] > 128
+for k in ('tail_L', 'tail_R'):
+    a = layers[k][..., 3] > 20
+    near_visible = ndimage.distance_transform_edt(~(a & ~cover)) <= 30
+    layers[k][..., 3][a & cover & ~near_visible] = 0
+# stray specks left by the cut-out (hair / ribbon bits above the shoulders, single pixels)
+for k in ('torso', 'arm_L', 'arm_R', 'skirt', 'neck', 'legs', 'hair_back', 'side_L', 'side_R', 'tail_L', 'tail_R'):
+    a = layers[k][..., 3] > 20
+    lab, n = ndimage.label(a)
+    if n > 1:
+        sizes = ndimage.sum(a, lab, range(1, n + 1))
+        layers[k][..., 3][np.isin(lab, np.where(sizes < 2000)[0] + 1)] = 0
+
 # ================================================================ PSD
 NAMES = {
     'tail_L': 'ツインテール L', 'tail_R': 'ツインテール R', 'hair_back': '後ろ髪',
     'legs': '脚', 'neck': '首', 'skirt': 'スカート', 'torso': '胴体', 'arm_L': '腕 L', 'arm_R': '腕 R',
+    'tail_front_L': '肩の髪 L', 'tail_front_R': '肩の髪 R',
     'face': '顔', 'mouth_close': '口 閉じ', 'mouth_open': '口 開き',
     'eye_white_L': '白目 L', 'eye_iris_L': '黒目 L', 'lash_low_L': '下まつげ L', 'lash_up_L': '上まつげ L',
     'eye_closed_L': '閉じ目 L', 'eye_happy_L': '笑い目 L',
@@ -229,7 +351,7 @@ NAMES = {
 HIDDEN = {'mouth_open', 'eye_closed_L', 'eye_closed_R', 'eye_happy_L', 'eye_happy_R'}
 STRUCTURE = [  # bottom -> top
     ('後ろ', ['tail_L', 'tail_R', 'hair_back']),
-    ('体', ['legs', 'skirt', 'neck', 'torso', 'arm_L', 'arm_R']),
+    ('体', ['legs', 'skirt', 'neck', 'torso', 'arm_L', 'arm_R', 'tail_front_L', 'tail_front_R']),
     ('顔', ['face', 'mouth_close', 'mouth_open',
             'eye_white_L', 'eye_iris_L', 'lash_low_L', 'lash_up_L', 'eye_closed_L', 'eye_happy_L',
             'eye_white_R', 'eye_iris_R', 'lash_low_R', 'lash_up_R', 'eye_closed_R', 'eye_happy_R',

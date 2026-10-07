@@ -1,0 +1,17 @@
+{
+	"Type": "Live2D Expression",
+	"FadeInTime": 0.1,
+	"FadeOutTime": 0.1,
+	"Parameters": [
+		{
+			"Id": "ParamEyeType",
+			"Value": 8,
+			"Blend": "Overwrite"
+		},
+		{
+			"Id": "ParamMarks",
+			"Value": 12,
+			"Blend": "Overwrite"
+		}
+	]
+}

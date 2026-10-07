@@ -1,0 +1,93 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "mafuyu.moc3",
+		"Textures": [
+			"mafuyu.2048/texture_00.png"
+		],
+		"DisplayInfo": "mafuyu.cdi3.json",
+		"Physics": "mafuyu.physics3.json",
+		"Expressions": [
+			{
+				"Name": "笑顔",
+				"File": "expressions/笑顔.exp3.json"
+			},
+			{
+				"Name": "ウィンク",
+				"File": "expressions/ウィンク.exp3.json"
+			},
+			{
+				"Name": "ぎゅっ",
+				"File": "expressions/ぎゅっ.exp3.json"
+			},
+			{
+				"Name": "ジト目",
+				"File": "expressions/ジト目.exp3.json"
+			},
+			{
+				"Name": "びっくり",
+				"File": "expressions/びっくり.exp3.json"
+			},
+			{
+				"Name": "こわい",
+				"File": "expressions/こわい.exp3.json"
+			},
+			{
+				"Name": "ぐるぐる",
+				"File": "expressions/ぐるぐる.exp3.json"
+			},
+			{
+				"Name": "泣き",
+				"File": "expressions/泣き.exp3.json"
+			},
+			{
+				"Name": "ハート",
+				"File": "expressions/ハート.exp3.json"
+			},
+			{
+				"Name": "キラキラ",
+				"File": "expressions/キラキラ.exp3.json"
+			},
+			{
+				"Name": "照れ",
+				"File": "expressions/照れ.exp3.json"
+			},
+			{
+				"Name": "怒り",
+				"File": "expressions/怒り.exp3.json"
+			},
+			{
+				"Name": "はてな",
+				"File": "expressions/はてな.exp3.json"
+			},
+			{
+				"Name": "音符",
+				"File": "expressions/音符.exp3.json"
+			},
+			{
+				"Name": "考え中",
+				"File": "expressions/考え中.exp3.json"
+			},
+			{
+				"Name": "汗",
+				"File": "expressions/汗.exp3.json"
+			},
+			{
+				"Name": "手を振る",
+				"File": "expressions/手を振る.exp3.json"
+			},
+			{
+				"Name": "ピース",
+				"File": "expressions/ピース.exp3.json"
+			},
+			{
+				"Name": "手を口元",
+				"File": "expressions/手を口元.exp3.json"
+			},
+			{
+				"Name": "腕を下ろす",
+				"File": "expressions/腕を下ろす.exp3.json"
+			}
+		]
+	}
+}
